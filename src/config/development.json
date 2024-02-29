@@ -1,0 +1,5 @@
+{
+    "absenceUrl": "https://front-end-kata.brighthr.workers.dev/api/absences",
+    "conflictUrl": "https://front-end-kata.brighthr.workers.dev/api/conflict/{id}"
+}
+  
