@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import Grid from "@material-ui/core/Grid";
 import {
   Table,
@@ -23,14 +23,19 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CancelIcon from "@mui/icons-material/Cancel";
 import { useTheme } from "@mui/material/styles";
 import { ExpandMore } from "@mui/icons-material";
+import performGetConflicts from "../service/performGetConflicts";
+import { setConflict } from "../reducers/absences/slice";
 
 const AbsenceTable = () => {
   const theme = useTheme();
+  const dispatch = useDispatch();
+
   const [sortDirection, setSortDirection] = useState("asc");
   const [sortedField, setSortedField] = useState("");
   const [expandedRow, setExpandedRow] = useState(false);
 
   const { values } = useSelector((state) => state.absences);
+  const findConflict = useSelector((state) => state.absences.conflict);
 
   const removeDuplicateNames = (data) => {
     const uniqueNames = {}; // Object to keep track of unique names
@@ -84,7 +89,13 @@ const AbsenceTable = () => {
     setSortedField(field);
   };
 
-  const handleRowClick = (index, id) => {
+  const handleRowClick = async (index, id, employeeId) => {
+    console.log("employeeId", employeeId);
+
+    const conflictResponse = await performGetConflicts(employeeId);
+
+    dispatch(setConflict(conflictResponse.conflicts));
+
     if (id === undefined) {
       setExpandedRow(false);
     } else {
@@ -200,6 +211,8 @@ const AbsenceTable = () => {
     return futureDates;
   };
 
+  console.log("findConflict", findConflict);
+
   return (
     <Grid container justifyContent="center">
       <Grid item xs={6}>
@@ -243,7 +256,9 @@ const AbsenceTable = () => {
               {sortedValues.map((x, index) => (
                 <>
                   <TableRow
-                    onClick={() => handleRowClick(index, x.multipleStartDates)}
+                    onClick={() =>
+                      handleRowClick(index, x.multipleStartDates, x.id)
+                    }
                   >
                     <TableCell>
                       {x.multipleStartDates ? (
@@ -291,6 +306,7 @@ const AbsenceTable = () => {
                               <TableRow>
                                 <TableCell>Absence Start Dates</TableCell>
                                 <TableCell>Absence End Dates</TableCell>
+                                <TableCell>Conflicts</TableCell>
                               </TableRow>
                             </TableHead>
                             <TableBody>
@@ -307,6 +323,11 @@ const AbsenceTable = () => {
                                           x.multipleDays
                                         )[i]
                                       }
+                                    </TableCell>
+                                    <TableCell>
+                                      {findConflict
+                                        ? "This employee has conflicts!"
+                                        : null}
                                     </TableCell>
                                   </TableRow>
                                 )
