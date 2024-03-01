@@ -10,19 +10,70 @@ import {
   TableRow,
   Paper,
   TableSortLabel,
+  ExpansionPanel,
+  ExpansionPanelSummary,
+  Typography,
+  Collapse,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from "@material-ui/core";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CancelIcon from "@mui/icons-material/Cancel";
 import { useTheme } from "@mui/material/styles";
+import { ExpandMore } from "@mui/icons-material";
 
 const AbsenceTable = () => {
   const theme = useTheme();
   const [sortDirection, setSortDirection] = useState("asc");
   const [sortedField, setSortedField] = useState("");
+  const [expandedRow, setExpandedRow] = useState(false);
 
   const { values } = useSelector((state) => state.absences);
 
-  console.log(values);
+  const removeDuplicateNames = (data) => {
+    const uniqueNames = {}; // Object to keep track of unique names
+
+    // Iterate through the dataset
+    data.forEach((entry) => {
+      const { firstName, lastName } = entry.employee;
+      const fullName = `${firstName} ${lastName}`;
+
+      // If the name is not already in uniqueNames, add it and keep the entry as is
+      if (!uniqueNames[fullName]) {
+        uniqueNames[fullName] = { ...entry }; // Clone the entry object
+      } else {
+        // If the name already exists, store the start date of the removed object
+        if (!uniqueNames[fullName].multipleStartDates) {
+          uniqueNames[fullName].multipleStartDates = [
+            uniqueNames[fullName].startDate,
+          ];
+        }
+        if (!uniqueNames[fullName].multipleDays) {
+          uniqueNames[fullName].multipleDays = [uniqueNames[fullName].days];
+        }
+        uniqueNames[fullName].multipleStartDates.push(entry.startDate);
+        uniqueNames[fullName].multipleDays.push(entry.days);
+
+        // Merge the data into the existing entry
+        Object.keys(entry).forEach((key) => {
+          // Skip employee key as it should not be overridden
+          if (key !== "employee") {
+            // Copy data from the entry to the existing uniqueNames entry
+            uniqueNames[fullName][key] = entry[key];
+          }
+        });
+      }
+    });
+
+    // Convert uniqueNames object back to an array
+    const newData = Object.values(uniqueNames);
+
+    return newData;
+  };
+
+  const newData = removeDuplicateNames(values);
 
   const handleSort = (field) => {
     //check for strict equality on boolean result
@@ -31,6 +82,14 @@ const AbsenceTable = () => {
     setSortDirection(isAsc ? "desc" : "asc");
 
     setSortedField(field);
+  };
+
+  const handleRowClick = (index, id) => {
+    if (id === undefined) {
+      setExpandedRow(false);
+    } else {
+      setExpandedRow(expandedRow === index ? false : index);
+    }
   };
 
   const sortByStartDate = (a, b) => {
@@ -47,7 +106,7 @@ const AbsenceTable = () => {
     return typeA.localeCompare(typeB);
   };
 
-  const sortedValues = [...values].sort((a, b) => {
+  const sortedValues = [...newData].sort((a, b) => {
     const nameA = `${a.employee.firstName} ${a.employee.lastName}`;
     const nameB = `${b.employee.firstName} ${b.employee.lastName}`;
 
@@ -105,6 +164,42 @@ const AbsenceTable = () => {
     return dateParts.reverse().join("/");
   };
 
+  const getMultipleStartDates = (multipleStartDates) => {
+    if (!multipleStartDates) {
+      return []; // Bail out if multipleStartDates doesn't exist or is not an array
+    }
+
+    return multipleStartDates.map((dateTimeString) => {
+      const datePart = dateTimeString.split("T")[0]; // Extracting only the date part
+      return datePart.split("-").reverse().join("/"); // Splitting, reversing, and joining the date parts
+    });
+  };
+
+  const addDaysToDate = (startDate, days) => {
+    const startDateObj = new Date(startDate);
+    const endDate = new Date(
+      startDateObj.getTime() + days * 24 * 60 * 60 * 1000
+    );
+
+    const dd = String(endDate.getDate()).padStart(2, "0");
+    const mm = String(endDate.getMonth() + 1).padStart(2, "0"); // January is 0!
+    const yyyy = endDate.getFullYear();
+
+    return `${dd}/${mm}/${yyyy}`;
+  };
+
+  const calculateFutureDates = (startDates, daysArray) => {
+    const futureDates = startDates.map((startDate, index) => {
+      // Check if startDate and daysArray[index] are defined
+      if (startDate && daysArray[index]) {
+        return addDaysToDate(startDate, daysArray[index]);
+      } else {
+        return "Employee returns on the same day";
+      }
+    });
+    return futureDates;
+  };
+
   return (
     <Grid container justifyContent="center">
       <Grid item xs={6}>
@@ -112,6 +207,7 @@ const AbsenceTable = () => {
           <Table>
             <TableHead>
               <TableRow>
+                <TableCell>Expand Employee Details</TableCell>
                 <TableCell>
                   <TableSortLabel
                     active={sortedField === "employeeName"}
@@ -144,22 +240,84 @@ const AbsenceTable = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {sortedValues.map((x) => (
-                <TableRow>
-                  <TableCell>{`${x.employee.firstName} ${x.employee.lastName}`}</TableCell>
-                  <TableCell>{formatDate(x.startDate)}</TableCell>
-                  <TableCell>{calculateEndDate(x.startDate, x.days)}</TableCell>
-                  <TableCell align="center">
-                    {x.approved ? (
-                      <CheckCircleIcon
-                        style={{ color: theme.palette.success.main }}
-                      />
-                    ) : (
-                      <CancelIcon style={{ color: theme.palette.error.main }} />
-                    )}
-                  </TableCell>
-                  <TableCell>{formatAbsenceType(x.absenceType)}</TableCell>
-                </TableRow>
+              {sortedValues.map((x, index) => (
+                <>
+                  <TableRow
+                    onClick={() => handleRowClick(index, x.multipleStartDates)}
+                  >
+                    <TableCell>
+                      {x.multipleStartDates ? (
+                        <ExpandMore
+                          style={{
+                            transform:
+                              expandedRow === index
+                                ? "rotate(180deg)"
+                                : "rotate(0deg)",
+                          }}
+                        />
+                      ) : null}
+                    </TableCell>
+                    <TableCell>{`${x.employee.firstName} ${x.employee.lastName}`}</TableCell>
+                    <TableCell>{formatDate(x.startDate)}</TableCell>
+                    <TableCell>
+                      {calculateEndDate(x.startDate, x.days)}
+                    </TableCell>
+                    <TableCell align="center">
+                      {x.approved ? (
+                        <CheckCircleIcon
+                          style={{ color: theme.palette.success.main }}
+                        />
+                      ) : (
+                        <CancelIcon
+                          style={{ color: theme.palette.error.main }}
+                        />
+                      )}
+                    </TableCell>
+                    <TableCell>{formatAbsenceType(x.absenceType)}</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell
+                      style={{ paddingBottom: 0, paddingTop: 0 }}
+                      colSpan={6}
+                    >
+                      <Collapse
+                        in={expandedRow === index}
+                        timeout="auto"
+                        unmountOnExit
+                      >
+                        <TableContainer component={Paper}>
+                          <Table size="small" aria-label="multiple-start-dates">
+                            <TableHead>
+                              <TableRow>
+                                <TableCell>Absence Start Dates</TableCell>
+                                <TableCell>Absence End Dates</TableCell>
+                              </TableRow>
+                            </TableHead>
+                            <TableBody>
+                              {getMultipleStartDates(x.multipleStartDates).map(
+                                (startDate, i) => (
+                                  //this is a bit of a mess, I have to iterate through the above to map values correctly
+                                  //if I could turn back the clock a few hours I would of loaded the data better in redux (cleanse it on load)
+                                  <TableRow key={i}>
+                                    <TableCell>{startDate}</TableCell>
+                                    <TableCell>
+                                      {
+                                        calculateFutureDates(
+                                          x.multipleStartDates,
+                                          x.multipleDays
+                                        )[i]
+                                      }
+                                    </TableCell>
+                                  </TableRow>
+                                )
+                              )}
+                            </TableBody>
+                          </Table>
+                        </TableContainer>
+                      </Collapse>
+                    </TableCell>
+                  </TableRow>
+                </>
               ))}
             </TableBody>
           </Table>
