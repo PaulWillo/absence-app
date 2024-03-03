@@ -1,3 +1,15 @@
 {
-    "text": "hello world"
+  "tableHeaders": {
+    "employeeHeaders": {
+      "details": "Expand Employee Details",
+      "employeeHeader": "Employee Name",
+      "startDate": "Start Date",
+      "absenceType": "Absence Type"
+    },
+    "expandedTableHeaders": {
+      "exStartDates": "Absence Start Dates",
+      "exAbsenceEndDates": "Absence End Dates",
+      "exConflicts": "Conflicts"
+    }
+  }
 }
