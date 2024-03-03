@@ -4,6 +4,8 @@
       "details": "Expand Employee Details",
       "employeeHeader": "Employee Name",
       "startDate": "Start Date",
+      "endDate": "End Date",
+      "approval": "Approval",
       "absenceType": "Absence Type"
     },
     "expandedTableHeaders": {

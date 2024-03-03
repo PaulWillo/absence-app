@@ -13,12 +13,16 @@ const TableHeaders = ({ handleSort, sortedField, sortDirection }) => {
   return (
     <TableHead>
       <TableRow>
-        <TableCell>{headers.details}</TableCell>
+        <TableCell data-cy={headers.details} aria-label={headers.details}>
+          {headers.details}
+        </TableCell>
         <TableCell>
           <TableSortLabel
             active={sortedField === "employeeName"}
             direction={sortDirection}
             onClick={() => handleSort("employeeName")}
+            data-cy={headers.employeeHeader}
+            aria-label={headers.employeeHeader}
           >
             {headers.employeeHeader}
           </TableSortLabel>
@@ -28,17 +32,25 @@ const TableHeaders = ({ handleSort, sortedField, sortDirection }) => {
             active={sortedField === "startDate"}
             direction={sortDirection}
             onClick={() => handleSort("startDate")}
+            data-cy={headers.startDate}
+            aria-label={headers.startDate}
           >
             {headers.startDate}
           </TableSortLabel>
         </TableCell>
-        <TableCell>End Date</TableCell>
-        <TableCell>Approval</TableCell>
+        <TableCell data-cy={headers.endDate} aria-label={headers.endDate}>
+          {headers.endDate}
+        </TableCell>
+        <TableCell data-cy={headers.approval} aria-label={headers.approval}>
+          {headers.approval}
+        </TableCell>
         <TableCell>
           <TableSortLabel
             active={sortedField === "absenceType"}
             direction={sortDirection}
             onClick={() => handleSort("absenceType")}
+            data-cy={headers.absenceType}
+            aria-label={headers.absenceType}
           >
             {headers.absenceType}
           </TableSortLabel>

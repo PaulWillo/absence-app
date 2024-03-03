@@ -50,6 +50,7 @@ export const sortByStartDate = (a, b) => {
 };
 
 export const formatAbsenceType = (absenceType) => {
+  //replace any _ or uppercase values
   return absenceType.toLowerCase().replace(/_/g, " ");
 };
 
@@ -101,6 +102,7 @@ export const addDaysToDate = (startDate, days) => {
   const startDateObj = new Date(startDate);
   const endDate = new Date(startDateObj.getTime() + days * 24 * 60 * 60 * 1000);
 
+  //using this for minimum lengths on the dates
   const dd = String(endDate.getDate()).padStart(2, "0");
   const mm = String(endDate.getMonth() + 1).padStart(2, "0"); // January is 0!
   const yyyy = endDate.getFullYear();
